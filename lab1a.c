@@ -61,9 +61,25 @@ int main(int argc, char *argv[]) {
                 exit(1);
         }
     }
+    setup_terminal_mode();  //setup terminal and save original state
+
     //Shell option
     if (shell_opt) {
-        setup_terminal_mode();
+        int pipe1[2];  //pipe[0] is read end of pipe. pipe[1] is write end of pipe
+        int pipe2[2];
+
+        int ret1 = pipe(pipe1);  //parent->child (terminal->shell)
+        int ret2 = pipe(pip2);  //child->parent (shell->terminal)
+        if (ret1 == -1) {
+            fprintf(stderr, "Error when piping parent->child: %s\n", strerror(errno));
+            exit(1);
+        }
+        if (ret1 == -1) {
+            fprintf(stderr, "Error when piping child->parent: %s\n", strerror(errno));
+            exit(1);
+        }
+        
+        //signal
 
         int ret = fork(); //create a child process from main
 
@@ -74,7 +90,7 @@ int main(int argc, char *argv[]) {
         else if (ret == 0) {  //child process will have return value of 0. Output is by default nondeterministic. We don't know order of execution
             
             char* args_exec[] = {"/bin/bash", NULL};
-            ret = execvp(args_exec[0], args_exec);  //executing a new (shell) program: /bin/bash
+            ret = execvp(args_exec[0], args_exec);  //executing a new (shell) program: /bin/bash. exec(3) replaces current image process with new one
             if (ret == -1) {
                 fprintf(stderr, "Error when executing execvp in child process: %s\n", strerror(errno));
                 exit(1);
@@ -93,8 +109,6 @@ int main(int argc, char *argv[]) {
 
 
     //Default execution(no options given)
-    setup_terminal_mode();  //setup terminal and save original state
-
     char buffer;
     ssize_t ret;
     //read (ASCII) input from keyboard into buffer
