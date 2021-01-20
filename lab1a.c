@@ -40,7 +40,7 @@ void setup_terminal_mode(void) {
     }
 }
 
-void reset_terminal(struct termios normal_mode) {  //reset to original mode
+void reset_terminal() {  //reset to original mode
     int error_check = tcsetattr(0, TCSANOW, &normal_mode);
     if (error_check < 0) {
         fprintf(stderr, "Error restoring terminal mode: %s\n", strerror(errno));
@@ -295,7 +295,6 @@ int main(int argc, char *argv[]) {
                         fprintf(stderr, "Error writing to standard output: %s\n", strerror(errno));
                         exit(1);
                     }       
-                    reset_terminal(normal_mode);
                     exit(0);
                 }
                 else if (buffer == '\r' || buffer == '\n') {
