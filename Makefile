@@ -10,6 +10,6 @@ clean:
 		rm -f lab1a *tar.gz
 
 dist:
-		tar -czvf lab0-005324612.tar.gz lab1a.c Makefile README
+		tar -czvf lab1a-005324612.tar.gz lab1a.c README Makefile 
 
 		

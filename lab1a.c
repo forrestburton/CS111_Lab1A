@@ -19,8 +19,14 @@ struct termios normal_mode;
 int pipe1[2];  //to shell. pipe[0] is read end of pipe. pipe[1] is write end of pipe
 int pipe2[2];  //from shell
 int pid;
-int shell_opt = 0;
-int debug_opt = 0;
+int shell_option = 0;
+int debug_option = 0;
+
+void reset_terminal(void);
+
+void handle_sigpipe() {
+    exit(0);
+}
 
 void setup_terminal_mode(void) {
     //save current mode so we can restore it at the end 
@@ -40,13 +46,13 @@ void setup_terminal_mode(void) {
     }
 }
 
-void reset_terminal() {  //reset to original mode
+void reset_terminal(void) {  //reset to original mode
     int error_check = tcsetattr(0, TCSANOW, &normal_mode);
     if (error_check < 0) {
         fprintf(stderr, "Error restoring terminal mode: %s\n", strerror(errno));
         exit(1);
     } 
-    if(shell_opt) {
+    if(shell_option) {
         int shell_status;
         //wait for shell to exit
         waitpid(pid, &shell_status, 0);
@@ -75,7 +81,7 @@ void child_processes(void) {
     }    
 
     //dup creates a copy of the file descriptor oldfd, dup2 allows us to specify file descriptor to be used 
-    if (dup2(pipe1[0]), 0) == -1) { //read stdin to shell(child). so now fd 0 points to the read of the shell
+    if (dup2(pipe1[0], 0) == -1) { //read stdin to shell(child). so now fd 0 points to the read of the shell
         fprintf(stderr, "Error when copying file descriptor: %s\n", strerror(errno));
         exit(1);
     } 
@@ -84,11 +90,11 @@ void child_processes(void) {
         exit(1);
     }  
 
-    if (dup2(pipe2[1]), 1) == -1) { //write shell to stdout. fd 1 
+    if (dup2(pipe2[1], 1) == -1) { //write shell to stdout. fd 1 
         fprintf(stderr, "Error when copying file descriptor: %s\n", strerror(errno));
         exit(1);
     }
-    if (dup2(pipe2[1]), 2) == -1) { //write shell to stderr. fd 2
+    if (dup2(pipe2[1], 2) == -1) { //write shell to stderr. fd 2
         fprintf(stderr, "Error when copying file descriptor: %s\n", strerror(errno));
         exit(1);
     } 
@@ -97,6 +103,7 @@ void child_processes(void) {
         exit(1);
     }   
 
+    int ret;
     char* args_exec[] = {"/bin/bash", NULL};
     ret = execvp(args_exec[0], args_exec);  //executing a new (shell) program: /bin/bash. exec(3) replaces current image process with new one
     if (ret == -1) {
@@ -126,14 +133,14 @@ void parent_processes(void) {
 
     int poll_val;
     while(1) {
-        poll_val = poll(poll_events, 2, -1);
+        poll_val = poll(poll_event, 2, -1);
         if (poll_val < 0) {
             fprintf(stderr, "Error polling: %s\n", strerror(errno));
             exit(1);
         }
-        
+        //Read input from stdin
         ssize_t ret;
-        if (poll_event[0].revents & POLLIN) { //Read input from stdin
+        if (poll_event[0].revents & POLLIN) { 
             char buffer[256];
             ret = read(0, buffer, sizeof(char)*256);  //parent and child each have copies of file descripters. In parent 0 still maps to stdin
             if (ret == -1) {  
@@ -150,7 +157,7 @@ void parent_processes(void) {
                     }       
                     close(pipe1[1]);
                 }
-                else if (buffer[i] == '\r' || buffer == '\n') {
+                else if (buffer[i] == '\r' || buffer[i] == '\n') {
                     ret = write(1, "\r\n", 2*sizeof(char));
                     if (ret == -1) {  
                         fprintf(stderr, "Error writing to standard output: %s\n", strerror(errno));
@@ -195,7 +202,7 @@ void parent_processes(void) {
             }
             for (int i = 0; i < ret; i++) {
                 if (buf[i] == '\n') {
-                    ret = write(1, "\r\n", 2*sizeof(char));
+                    ret = write(1, "\r", 2*sizeof(char));
                     if (buf[i] == -1) {  
                         fprintf(stderr, "Error writing to standard output: %s\n", strerror(errno));
                         exit(1);
@@ -219,7 +226,7 @@ void parent_processes(void) {
 
 
     int exit_status;
-    waitpid(ret, &exit_status, 0);  //wait for child process to finish
+    waitpid(pid, &exit_status, 0);  //wait for child process to finish
     printf("Child process is exiting. Exit code: %d\n", WEXITSTATUS(exit_status));
     exit(0);
 }
@@ -236,10 +243,10 @@ int main(int argc, char *argv[]) {
         if (c == -1) break;
         switch (c) {
             case 's':
-                shell_opt = 1;
+                shell_option = 1;
                 break;
             case 'd':
-                debug_opy = 1;
+                debug_option = 1;
                 break;
             default:
                 printf("Incorrect usage: accepted options are: [--shell --debug]\n");
@@ -249,19 +256,19 @@ int main(int argc, char *argv[]) {
     setup_terminal_mode();  //setup terminal and save original state
 
     //Shell option
-    if (shell_opt) {
+    if (shell_option) {
         int ret1 = pipe(pipe1);  //parent->child (terminal->shell)
         int ret2 = pipe(pipe2);  //child->parent (shell->terminal)
         if (ret1 == -1) {
             fprintf(stderr, "Error when piping parent->child: %s\n", strerror(errno));
             exit(1);
         }
-        if (ret1 == -1) {
+        if (ret2 == -1) {
             fprintf(stderr, "Error when piping child->parent: %s\n", strerror(errno));
             exit(1);
         }
         
-        //signal?
+        signal(SIGPIPE, handle_sigpipe);
 
         //stdin is file descriptor 0, stdout is file descripter 1
         //Both parent and child have access to both ends of the pipe. This is how they communicate 

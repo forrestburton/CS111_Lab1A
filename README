@@ -13,3 +13,6 @@ dup(2) man: https://man7.org/linux/man-pages/man2/dup.2.html#:~:text=The%20dup()
 Exit signals in C: https://stackoverflow.com/questions/15154586/exit-handler-in-c
 How to get shell exit status: https://stackoverflow.com/questions/33810371/how-to-get-exit-status-of-shell-commands-run-through-system-in-c
 How to make a parent wait for child processes to finish: https://stackoverflow.com/questions/19461744/how-to-make-parent-wait-for-all-child-processes-to-finish
+SIGPIPE: https://unix.stackexchange.com/questions/433345/under-what-conditions-exactly-does-sigpipe-happen
+https://stackoverflow.com/Questions/108183/how-to-prevent-sigpipes-or-handle-them-properly
+https://www.gnu.org/software/libc/manual/html_node/Operation-Error-Signals.html
