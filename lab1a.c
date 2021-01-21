@@ -95,13 +95,6 @@ int main(int argc, char *argv[]) {
     }
     setup_terminal_mode();  //setup terminal and save original state
 
-
-
-
-
-
-
-
     //Shell option
     if (shell_option) {
         int ret1 = pipe(pipe1);  //parent->child (terminal->shell)
@@ -125,9 +118,6 @@ int main(int argc, char *argv[]) {
             fprintf(stderr, "Error when forking main: %s\n", strerror(errno));
             exit(1);
         }
-
-
-
         else if (pid == 0) {  //child process will have return value of 0. Output is by default nondeterministic. We don't know order of execution so we need poll
             printf("made it inside child process");
 
@@ -176,11 +166,6 @@ int main(int argc, char *argv[]) {
                 exit(1);
             }
         }
-
-
-
-
-
         else if (pid > 0) {  //parent process will have return value of > 0
             printf("made it inside parent process");
             //close ends of pipe we aren't using
@@ -273,7 +258,7 @@ int main(int argc, char *argv[]) {
                     }
                     for (int i = 0; i < ret2; i++) {
                         if (buf[i] == '\n') {
-                            write_check = write(1, "\r\n", sizeof(char));
+                            write_check = write(1, "\r\n", sizeof(char)*2);
                             if (write_check == -1) {  
                                 fprintf(stderr, "Error writing to standard output 5: %s\n", strerror(errno));
                                 exit(1);
@@ -299,29 +284,12 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            // if (terminate == 0) {
-            //     close(pipe1[1]);
-            //     terminate = 1;
-            // }
-
             int exit_status;
             waitpid(pid, &exit_status, 0);  //wait for child process to finish
             printf("Child process is exiting. Exit code: %d\n", WEXITSTATUS(exit_status));
             exit(0);   
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
     else {
         //Default execution(no options given)
         char buffer;
