@@ -16,3 +16,5 @@ How to make a parent wait for child processes to finish: https://stackoverflow.c
 SIGPIPE: https://unix.stackexchange.com/questions/433345/under-what-conditions-exactly-does-sigpipe-happen
 https://stackoverflow.com/Questions/108183/how-to-prevent-sigpipes-or-handle-them-properly
 https://www.gnu.org/software/libc/manual/html_node/Operation-Error-Signals.html
+what exit codes mean: https://askubuntu.com/questions/892604/what-is-the-meaning-of-exit-0-exit-1-and-exit-2-in-a-bash-script
+File descriptor error : https://stackoverflow.com/questions/5268733/c-write-error-bad-file-descriptor-after-fork-dup2-and-execv
